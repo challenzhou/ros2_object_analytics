@@ -53,10 +53,6 @@ private:
 namespace fs = std::experimental::filesystem;
 #endif
 
-// using namespace std;
-// using namespace cv;
-// using namespace datasets;
-
 void show_usage()
 {
   TRACE_INFO("Usage for tracker_regression:\n");
@@ -227,6 +223,8 @@ static const char * keys = {
 
 int main(int argc, char * argv[])
 {
+  CONFIG_LOGGER_MODULES("./dbg.ini");
+
   // Parse the command line options.
   std::string dsPath, dsName, dType;
   datasets::dsType dsTpy;
@@ -237,7 +235,8 @@ int main(int argc, char * argv[])
   dsPath = parser.get<std::string>(0);
   dsName = parser.get<std::string>(1);
 
-  dsTpy = datasets::dsMTImage;
+//  dsTpy = datasets::dsMTImage;
+  dsTpy = datasets::dsSTImage;
 
   if (dsPath == "" || dsName == "") {
     TRACE_INFO("Please specfic below options:\n");
@@ -254,7 +253,7 @@ int main(int argc, char * argv[])
 
   while (true) {
 #ifndef NDEBUG
-    int key = cv::waitKey(10);
+    int key = cv::waitKey(1);
     if (key == ' ') {
 #endif
       t_node.emitFrame();
@@ -263,7 +262,7 @@ int main(int argc, char * argv[])
     } else if (key == 'q') {
       break;
     }
-    key = cv::waitKey(100);
+    key = cv::waitKey(1);
 #endif
   }
 

@@ -24,7 +24,7 @@
 namespace tracker
 {
 const int32_t Tracking::kAgeingThreshold = 60;
-const int32_t Tracking::kDetCountThreshold = 8;
+const int32_t Tracking::kDetCountThreshold = 1;
 const int32_t Tracking::kTrackLostThreshold = 3;
 const int32_t Tracking::kTrajLength = 30;
 

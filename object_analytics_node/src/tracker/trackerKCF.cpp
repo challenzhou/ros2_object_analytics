@@ -69,7 +69,7 @@ Params::Params()
   lambda = 0.0000f;
   interp_factor = 0.2f;
   output_sigma_factor = 1.0f / 4.0f;
-  resize = true;
+  resize = false;
   max_patch_size = 80 * 80;
   wrap_kernel = false;
   desc_npca = GRAY | CN;
@@ -409,11 +409,8 @@ bool TrackerKCFImpl::detectImpl(
 
   if (centra_x < 0 || centra_y < 0) {return false;}
 
-#ifndef NDEBUG
-  std::cout << "\nDetect input boundingBox:" << boundingBox << std::endl;
-  std::cout << "\ninput centra point x:" << centra_x << ",y:" << centra_y <<
-    std::endl;
-#endif
+  TRACE_INFO("\nDetect input boundingBox:%d", boundingBox);
+  TRACE_INFO("\ninput centra point x:%d, y:%d", centra_x, centra_y);
 
   roi_scale.width = boundingBox.width * paddingRatio;
   roi_scale.height = boundingBox.height * paddingRatio;

@@ -61,6 +61,7 @@ find_package(PCL 1.7 REQUIRED COMPONENTS
   search
   filters
 )
+find_package(Qt5 COMPONENTS Widgets REQUIRED)
 
 include_directories(
   include
@@ -181,7 +182,7 @@ ament_target_dependencies(segmenter_component
   "object_analytics_msgs"
   "message_filters"
 )
-target_link_libraries(segmenter_component object_analytics_common ${PCL_SEGMENTATION_LIBRARIES} lz4)
+target_link_libraries(segmenter_component object_analytics_common ${PCL_SEGMENTATION_LIBRARIES} lz4 Qt5::Widgets)
 rclcpp_components_register_nodes(segmenter_component "object_analytics_node::segmenter::SegmenterNode")
 set(node_plugins
   "${node_plugins}object_analytics_node::segmenter::SegmenterNode;$<TARGET_FILE:segmenter_component>\n")

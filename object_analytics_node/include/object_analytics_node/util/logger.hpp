@@ -24,6 +24,7 @@
 #include <unordered_set>
 #include <vector>
 #include <memory>
+#include <fstream>
 
 #include "common/utility.hpp"
 
@@ -31,19 +32,30 @@
   bool diag::LOGGER_NAME::registered = \
     diag::loggerFarm::registerLogger(#LOGGER_NAME, LOGGER_NAME::create())
 
+#define CONFIG_LOGGER_MODULES(PATH) \
+  { \
+    diag::loggerFarm::configLoggerModules("consoleLogger", PATH); \
+  }
+
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
 #ifndef NDEBUG
 #define TRACE_INFO(...) \
   { \
     auto log = diag::loggerFarm::getLogger("consoleLogger"); \
     if (log != nullptr) { \
-      std::string header = __FILE__; \
-      header += "("; \
-      header += std::to_string(__LINE__); \
-      header += ")"; \
-      header += ":"; \
-      header += __FUNCTION__; \
-      log->log(header); \
-      log->log(__VA_ARGS__); \
+      std::string module = __FILENAME__; \
+      if (log->config_.validModule(module)) \
+      { \
+        std::string header = __FILENAME__; \
+        header += "("; \
+        header += std::to_string(__LINE__); \
+        header += ")"; \
+        header += ":"; \
+        header += __FUNCTION__; \
+        log->log(header); \
+        log->log(__VA_ARGS__); \
+      } \
     } \
   }
 
@@ -71,7 +83,7 @@
   { \
     auto log = diag::loggerFarm::getLogger("consoleLogger"); \
     if (log != nullptr) { \
-      std::string header = __FILE__; \
+      std::string header = __FILENAME__; \
       header += "("; \
       header += std::to_string(__LINE__); \
       header += ")"; \
@@ -99,9 +111,9 @@ public:
   {
     auto search = moduleList_.find(module);
     if (search == moduleList_.end()) {
-      return true;
-    } else {
       return false;
+    } else {
+      return true;
     }
   }
 
@@ -110,6 +122,16 @@ public:
     if (validModule(module)) {return false;}
 
     moduleList_.insert(module);
+
+    return true;
+  }
+
+  bool addModules(std::vector<std::string> modules)
+  {
+    for (uint32_t i=0; i<modules.size(); i++)
+      if (validModule(modules[i])) {modules.erase(modules.begin()+i);}
+
+    std::copy(modules.begin(), modules.end(), std::inserter(moduleList_, moduleList_.end()));
 
     return true;
   }
@@ -190,6 +212,8 @@ public:
 
 public:
   std::string loggerName_;
+
+  loggerConfig config_;
 };
 
 class loggerFarm
@@ -230,13 +254,47 @@ public:
     }
   }
 
-  // @brief Reconfigures specified loggerBase with configurations
-  static void configLogger(
+  // @brief Config logger module list
+  static void configLoggerModules(
     const std::string & name,
-    const loggerConfig & config)
+    const std::string & path)
   {
-    UNUSED(name);
-    UNUSED(config);
+    if (!hasLogger(name)) return;
+
+    std::shared_ptr<loggerBase> logPtr = getLogger(name);
+
+    std::ifstream namesList(path.c_str());
+    if (namesList.is_open()) {
+      std::string moduleName;
+      while (getline(namesList, moduleName)) {
+        logPtr->config_.addModule(moduleName);
+      }
+    }
+
+  }
+
+  // @brief Add module to logger list
+  static void addModuleToLogger(
+    const std::string & name,
+    const std::string module)
+  {
+    if (hasLogger(name))
+    {
+      std::shared_ptr<loggerBase> logPtr = getLogger(name);
+      logPtr->config_.addModule(module);
+    }
+  }
+
+  // @brief Add modules to logger list
+  static void addModulesToLogger(
+    const std::string & name,
+    const std::vector<std::string> modules)
+  {
+    if (hasLogger(name))
+    {
+      std::shared_ptr<loggerBase> logPtr = getLogger(name);
+      logPtr->config_.addModules(modules);
+    }
   }
 
   // @brief Flush all the logers
