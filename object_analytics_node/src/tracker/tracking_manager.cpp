@@ -228,6 +228,8 @@ void TrackingManager::detectRecvProcess(
     cv::Mat(1, trackings_.size(), CV_32SC1, cv::Scalar(-1));
   cv::Mat weights = calcTrackDetWeights(objs, trackings_, stamp);
 
+  TRACE_INFO("\nWeights:%d", weights);
+
   /*TBD: Need refine to get KM algorithm done to replace hungrian algorithm*/
   // cv::Mat distance = calcTrackDetMahaDistance(objs, trackings_, stamp);
   // if (!distance.empty()) {
@@ -446,11 +448,11 @@ void TrackingManager::matchTrackDetHungarian(
 {
   int rows = weights.rows, cols = weights.cols;
   if (rows != row_match.cols) {
-    TRACE_ERR("\ntracker number is not correct!!!");
+    TRACE_ERR("tracker number is not correct!!!");
     return;
   }
   if (cols != col_match.cols) {
-    TRACE_ERR("\ndetection number is not correct!!!");
+    TRACE_ERR("detection number is not correct!!!");
     return;
   }
 
@@ -477,7 +479,7 @@ bool TrackingManager::searchMatchHungarian(
     if (tgtVisited.ptr<uint8_t>(0)[i] == 1) {continue;}
 
     uint8_t corr = correlations.ptr<uint8_t>(srcId)[i];
-    TRACE_INFO("\nsrcId:%d, i:%d, corr:%d", srcId, i, corr);
+    TRACE_INFO("srcId:%d, i:%d, corr:%d", srcId, i, corr);
     if (corr == 255) {
       tgtVisited.ptr<uint8_t>(0)[i] = 1;
 

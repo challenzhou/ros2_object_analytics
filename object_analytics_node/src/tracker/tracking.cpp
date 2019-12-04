@@ -109,7 +109,7 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
     bcentra.at<float>(0), bcentra.at<float>(1));
 
   bool ret =
-    tracker_->detectImpl(frame->frame, tracked_rect_, probability_, false);
+    tracker_->detectImpl(frame->frame, tracked_rect_, probability_, true);
   if (ret) {
     cv::Mat bcentra = cv::Mat::zeros(2, 1, CV_32F);
     bcentra.at<float>(0) = tracked_rect_.x + tracked_rect_.width / 2;
@@ -148,13 +148,12 @@ void Tracking::updateTracker(
     det);
 
   if (det) {
-    bool debug = (tracking_id_ == DEBUG_ID);
-    debug = false;
+    bool debug = false;
 
     Traj traj;
     bool ret = getTraj(traj);
     if (!ret) {
-      TRACE_INFO("Tracker(%d) update stamp(%f), det(%d), failed since of no base frame!!!!",
+      TRACE_INFO("Tracker(%d) update fail, stamp(%f), det(%d):no base frame!!!!",
         tracking_id_, lstamp, det);
       state_ = LOST;
       return;
@@ -166,7 +165,7 @@ void Tracking::updateTracker(
         tracked_rect_, probability_, debug);
 
     if (!ret) {
-      TRACE_INFO("Tracker(%d) update stamp(%f), det(%d), failed since of match fail!!!!",
+      TRACE_INFO("Tracker(%d) update fail, stamp(%f), det(%d): match fail!!!!",
         tracking_id_, lstamp, det);
 
       state_ = LOST;
@@ -184,11 +183,10 @@ void Tracking::updateTracker(
       bcentra.at<float>(0) = tracked_rect_.x + tracked_rect_.width / 2;
       bcentra.at<float>(1) = tracked_rect_.y + tracked_rect_.height / 2;
       kalman_.correct(bcentra, covar);
-    }
 
-    if (state_ == INIT) {
       storeTraj(frame->stamp, prediction_, covar, frame->frame);
     }
+
   } else {
     tracker_->updateWithTrackImpl(frame->frame, boundingBox, probability_,
       false);

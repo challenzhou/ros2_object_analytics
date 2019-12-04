@@ -68,7 +68,7 @@ Params::Params()
   sigma = 0.2f;
   lambda = 0.0000f;
   interp_factor = 0.2f;
-  output_sigma_factor = 1.0f / 4.0f;
+  output_sigma_factor = 1.0f / 8.0f;
   resize = false;
   max_patch_size = 80 * 80;
   wrap_kernel = false;
@@ -409,8 +409,8 @@ bool TrackerKCFImpl::detectImpl(
 
   if (centra_x < 0 || centra_y < 0) {return false;}
 
-  TRACE_INFO("\nDetect input boundingBox:%d", boundingBox);
-  TRACE_INFO("\ninput centra point x:%d, y:%d", centra_x, centra_y);
+  TRACE_INFO("Detect input boundingBox:%d", boundingBox);
+  TRACE_INFO("input centra point x:%d, y:%d", centra_x, centra_y);
 
   roi_scale.width = boundingBox.width * paddingRatio;
   roi_scale.height = boundingBox.height * paddingRatio;
@@ -453,18 +453,18 @@ bool TrackerKCFImpl::detectImpl(
   ret = extractCovar(response, exp(-2.0f), corrMean, corrCovar, corrEigVal,
       corrEigVec);
   if (!ret) {
-    TRACE_ERR("\nDid not get valid response!!!");
+    TRACE_ERR("Did not get valid response!!!");
   }
 
   // extract the maximum response
   minMaxLoc(response, &minVal, &maxVal, &minLoc, &maxLoc);
   confidence = maxVal;
-  TRACE_INFO("\nMax response:%f, loc(%d, %d)\n", maxVal, maxLoc.x, maxLoc.y);
+  TRACE_INFO("Max response:%f, loc(%d, %d)\n", maxVal, maxLoc.x, maxLoc.y);
 
   if (debug) {drawDetectProcess(roi_scale, x, z, k, response, alphaf);}
 
   if (maxVal < params.detect_thresh) {
-    TRACE_ERR("\nDetect end: Fail!!!");
+    TRACE_ERR("Detect end: Fail!!!");
     return false;
   }
 
@@ -486,7 +486,7 @@ bool TrackerKCFImpl::detectImpl(
   boundingBox.x = boundingBox.x - shift_x;
   boundingBox.y = boundingBox.y - shift_y;
 
-  TRACE_INFO("\nshift_x:%f, shift_y:%f", shift_x, shift_y);
+  TRACE_INFO("shift_x:%f, shift_y:%f", shift_x, shift_y);
 
   // correct centra point
   if (kalman_enable) {
@@ -496,7 +496,7 @@ bool TrackerKCFImpl::detectImpl(
     kalman.correct(bcentra, corrCovar);
   }
 
-  TRACE_INFO("\nDetect end: Success!\n");
+  TRACE_INFO("Detect end: Success!\n");
 
   return true;
 }
@@ -627,7 +627,7 @@ bool TrackerKCFImpl::updateWithDetectImpl(
       sqrt((roi_detect.width * roi_detect.height) / params.max_patch_size);
     if (resizeRatio < 1.0f) {resizeRatio = 1.0f;}
 
-    TRACE_INFO("\nresizeRatio:%f", resizeRatio);
+    TRACE_INFO("resizeRatio:%f", resizeRatio);
 
     roi_detect.x /= resizeRatio;
     roi_detect.y /= resizeRatio;
@@ -719,7 +719,7 @@ bool TrackerKCFImpl::updateWithDetectImpl(
   if (maxVal > 1.0f) {maxVal = 1.0f;}
 
   if (maxVal < params.detect_thresh) {
-    TRACE_ERR("\nUpdate with detect: Failed!!!");
+    TRACE_ERR("\nUpdate with detect: Failed(%f)!!!", maxVal);
     return false;
   }
 
