@@ -53,7 +53,8 @@
         header += ")"; \
         header += ":"; \
         header += __FUNCTION__; \
-        log->log(header); \
+        header = "[" + header + "]\t"; \
+        log->log_header(header); \
         log->log(__VA_ARGS__); \
       } \
     } \
@@ -71,7 +72,7 @@
       header += "("; \
       header += std::to_string(microsec); \
       header += ")"; \
-      log->log(header); \
+      log->log_header(header); \
     } \
   }
 #else
@@ -89,7 +90,8 @@
       header += ")"; \
       header += ":"; \
       header += __FUNCTION__; \
-      log->log(header); \
+      header = "[" + header + "]\t"; \
+      log->log_header(header); \
       log->log(__VA_ARGS__); \
     } \
   }
@@ -204,6 +206,7 @@ public:
   virtual void log_char(const char s) = 0;
   virtual void log_structure(const stream_any & s) = 0;
 
+  virtual void log_header(std::string header) {header_ = header;};
   virtual bool log_begin() = 0;
   virtual void log_end() = 0;
 
@@ -214,6 +217,8 @@ public:
   std::string loggerName_;
 
   loggerConfig config_;
+
+  std::string header_;
 };
 
 class loggerFarm
@@ -325,9 +330,19 @@ public:
 
   virtual void log_structure(const stream_any & s) {std::cout << s;}
 
-  virtual bool log_begin() {return true;}
+  virtual bool log_begin()
+  {
+    if (!header_.empty())
+      log_dat(header_);
+    return true;
+  }
 
-  virtual void log_end() {std::cout << std::endl;}
+  virtual void log_end()
+  {
+    header_.clear();
+
+    std::cout << std::endl;
+  }
 
   virtual void flush() {}
 
