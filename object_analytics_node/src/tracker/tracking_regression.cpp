@@ -53,26 +53,6 @@ private:
 namespace fs = std::experimental::filesystem;
 #endif
 
-void show_usage()
-{
-  TRACE_INFO("Usage for tracker_regression:\n");
-  TRACE_INFO(
-    "tracker_regression [-a algorithm] [-p dataset_path] [-t dataset_type] "
-    "[-n "
-    "dataset_name] [-h]\n");
-  TRACE_INFO("options:\n");
-  TRACE_INFO("-h : Print this help function.\n");
-  TRACE_INFO(
-    "-a algorithm_name : Specify the tracking algorithm in the tracker.\n");
-  TRACE_INFO(
-    "   supported algorithms: KCF,TLD,BOOSTING,MEDIAN_FLOW,MIL,GOTURN\n");
-  TRACE_INFO("-p dataset_path : Specify the tracking datasets location.\n");
-  TRACE_INFO(
-    "-t dataset_type : Specify the dataset type: "
-    "st_video,st_image,mt_video,mt_image.\n");
-  TRACE_INFO("-n dataset_name : Specify the dataset name.\n");
-}
-
 class Streamer_node
 {
 public:
@@ -216,33 +196,40 @@ void Streamer_node::emitDetect()
   }
 }
 
-static const char * keys = {
-  "{@tracker_algorithm | | Tracker algorithm }"
-  "{@dataset_path     |true| Dataset path     }"
-  "{@dataset_name     |1| Dataset Name     }"};
+const std::string keys = {
+  "{t tracker_algorithm |KCF     | Tracker algorithm }"
+  "{p ds_path      || Dataset path }"
+  "{n ds_name      || Dataset Name }"
+  "{ds ds_type     |st_image| Dataset Type: st_image or mt_image}"
+  "{g debug_file   |<none>  | logger config file }"
+  "{h help     || show usage}"
+};
 
 int main(int argc, char * argv[])
 {
-  CONFIG_LOGGER_MODULES("./dbg.ini");
-
-  // Parse the command line options.
   std::string dsPath, dsName, dType;
   datasets::dsType dsTpy;
   std::string algo;
   Streamer_node t_node;
 
   cv::CommandLineParser parser(argc, argv, keys);
-  dsPath = parser.get<std::string>(0);
-  dsName = parser.get<std::string>(1);
+  dsPath = parser.get<std::string>("ds_path");
+  dsName = parser.get<std::string>("ds_name");
 
-//  dsTpy = datasets::dsMTImage;
-  dsTpy = datasets::dsSTImage;
+  if (parser.get<std::string>("ds_type") == "mt_image")
+    dsTpy = datasets::dsMTImage;
+  else
+    dsTpy = datasets::dsSTImage;
 
   if (dsPath == "" || dsName == "") {
     TRACE_INFO("Please specfic below options:\n");
-    show_usage();
+    parser.printMessage();
     return 0;
   }
+
+  std::string dbgFile = parser.get<std::string>("debug_file");
+  if (!dbgFile.empty())
+    CONFIG_LOGGER_MODULES(dbgFile);
 
   t_node.initialDataset(dsPath, dsTpy, dsName);
 
