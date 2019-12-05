@@ -90,7 +90,7 @@ bool KalmanFilter::initialParams(
 void KalmanFilter::configDeltaT(timespec deltaT)
 {
   // 10ms unit
-  float dt = (deltaT.tv_sec * 1e2 + deltaT.tv_nsec * 1e-7);
+  float dt = (deltaT.tv_sec * 1e3 + deltaT.tv_nsec * 1e-6);
 
   /** DYNAMIC MODEL **/
   //  [1 0 dt 0  ]

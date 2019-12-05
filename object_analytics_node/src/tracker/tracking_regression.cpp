@@ -72,6 +72,8 @@ public:
   void emitFrame();
   void emitDetect();
 
+  int getFrameIdx(){return ds_->getFrameIdx();}
+
   std::thread emitThread;
   std::mutex g_runlock;
   std::condition_variable g_frame_signal;
@@ -202,6 +204,7 @@ const std::string keys = {
   "{n ds_name      || Dataset Name }"
   "{ds ds_type     |st_image| Dataset Type: st_image or mt_image}"
   "{g debug_file   |<none>  | logger config file }"
+  "{f stop_frame   |0| stop by frame index}"
   "{h help     || show usage}"
 };
 
@@ -231,6 +234,8 @@ int main(int argc, char * argv[])
   if (!dbgFile.empty())
     CONFIG_LOGGER_MODULES(dbgFile);
 
+  int frame_stop = parser.get<int>("stop_frame");
+
   t_node.initialDataset(dsPath, dsTpy, dsName);
 
   t_node.emitDetect();
@@ -238,9 +243,14 @@ int main(int argc, char * argv[])
 
   t_node.g_frame_signal.notify_all();
 
+  do {
+    t_node.emitFrame();
+    t_node.emitDetect();
+  } while (t_node.getFrameIdx() < frame_stop);
+
   while (true) {
 #ifndef NDEBUG
-    int key = cv::waitKey(1);
+    int key = cv::waitKey(0);
     if (key == ' ') {
 #endif
       t_node.emitFrame();
@@ -249,7 +259,6 @@ int main(int argc, char * argv[])
     } else if (key == 'q') {
       break;
     }
-    key = cv::waitKey(1);
 #endif
   }
 

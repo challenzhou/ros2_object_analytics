@@ -42,7 +42,7 @@ void TrackingManager::track(std::shared_ptr<sFrame> frame)
 {
   timespec stamp = frame->stamp;
 
-  TRACE_INFO("\nstamp_sec(%ld), stamp_nanosec(%ld)\n", stamp.tv_sec,
+  TRACE_INFO("stamp_sec(%ld), stamp_nanosec(%ld)\n", stamp.tv_sec,
     stamp.tv_nsec);
 
   if (!initialized_) {return;}
@@ -176,14 +176,16 @@ cv::Mat TrackingManager::calcTrackDetWeights(
     t_centra.at<float>(0) = traj.rect_.x + traj.rect_.width / 2.0f;
     t_centra.at<float>(1) = traj.rect_.y + traj.rect_.height / 2.0f;
 
-    TRACE_INFO("Tracking-Traj[%d][%s]", tracker->getTrackingId(),
-      tracker->getObjName().c_str());
+    TRACE_INFO("Tracking-Traj[%d][%s], stamp[%d]", tracker->getTrackingId(),
+      tracker->getObjName().c_str(), stamp.tv_nsec);
     TRACE_INFO("Traj Rect:%d", traj.rect_);
 
     cv::Mat covar = traj.covar_.clone();
 
+#if 0
     float prob = sqrt(determinant(covar));
     prob = 1.0f / (prob * 2.0f * CV_PI);
+#endif
 
     for (int j = 0; j < weights.cols; j++) {
       cv::Mat d_centra = cv::Mat::zeros(1, 2, CV_32F);
@@ -213,11 +215,11 @@ void TrackingManager::detectRecvProcess(
 {
   struct timespec stamp = frame->stamp;
 
-  TRACE_INFO("\nstamp_sec(%ld), stamp_nanosec(%ld)\n", stamp.tv_sec,
+  TRACE_INFO("stamp_sec(%ld), stamp_nanosec(%ld)\n", stamp.tv_sec,
     stamp.tv_nsec);
 
   if (initialized_ && !isDetFrameValid(stamp)) {
-    TRACE_INFO("\nDet frame is too late!!!");
+    TRACE_INFO("Det frame is too late!!!");
     return;
   }
 
@@ -228,7 +230,7 @@ void TrackingManager::detectRecvProcess(
     cv::Mat(1, trackings_.size(), CV_32SC1, cv::Scalar(-1));
   cv::Mat weights = calcTrackDetWeights(objs, trackings_, stamp);
 
-  TRACE_INFO("\nWeights:%d", weights);
+  TRACE_INFO("stamp(%ld), Weights:%d", stamp.tv_nsec, weights);
 
   /*TBD: Need refine to get KM algorithm done to replace hungrian algorithm*/
   // cv::Mat distance = calcTrackDetMahaDistance(objs, trackings_, stamp);

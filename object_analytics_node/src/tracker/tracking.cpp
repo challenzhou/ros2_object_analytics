@@ -96,7 +96,7 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
 {
   double lstamp = frame->stamp.tv_sec * 1e3 + frame->stamp.tv_nsec * 1e-6;
   UNUSED(lstamp);
-  TRACE_INFO("\nTracker(%d) detect stamp(%f)", tracking_id_, lstamp);
+  TRACE_INFO("Tracker(%d) detect stamp(%f)", tracking_id_, lstamp);
 
   cv::Mat bcentra = kalman_.predict(frame->stamp);
   prediction_.x = bcentra.at<float>(0) - prediction_.width / 2;
@@ -120,7 +120,7 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
     TRACE_INFO("Tracker(%d), correct centra(%f, %f)", tracking_id_,
       bcentra.at<float>(0), bcentra.at<float>(1));
 
-    storeTraj(frame->stamp, prediction_, covar, frame->frame);
+    storeTraj(frame->stamp, tracked_rect_, covar, frame->frame);
 
     clearTrackLost();
 
