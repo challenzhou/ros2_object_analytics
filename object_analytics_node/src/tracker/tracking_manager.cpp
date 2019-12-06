@@ -42,7 +42,7 @@ void TrackingManager::track(std::shared_ptr<sFrame> frame)
 {
   timespec stamp = frame->stamp;
 
-  TRACE_INFO("stamp_sec(%ld), stamp_nanosec(%ld)\n", stamp.tv_sec,
+  TRACE_INFO("stamp_sec(%d), stamp_nanosec(%d)\n", stamp.tv_sec,
     stamp.tv_nsec);
 
   if (!initialized_) {return;}
@@ -67,14 +67,13 @@ void TrackingManager::track(std::shared_ptr<sFrame> frame)
     }
 
     if ((*t)->detectTracker(frame)) {
-      TRACE_INFO("Tracking[%d][%s] updated", (*t)->getTrackingId(),
+      TRACE_INFO("Tracking[%d][%s] success!", (*t)->getTrackingId(),
         (*t)->getObjName().c_str());
 
       cv::Rect2d t_rect = (*t)->getTrackedRect();
       (*t)->updateTracker(frame, t_rect, (*t)->getObjProbability(), false);
 
     } else {
-      (*t)->incTrackLost();
 
       TRACE_ERR("Tracking[%d][%s] failed!", (*t)->getTrackingId(),
         (*t)->getObjName().c_str());
@@ -215,7 +214,7 @@ void TrackingManager::detectRecvProcess(
 {
   struct timespec stamp = frame->stamp;
 
-  TRACE_INFO("stamp_sec(%ld), stamp_nanosec(%ld)\n", stamp.tv_sec,
+  TRACE_INFO("stamp_sec(%d), stamp_nanosec(%d)\n", stamp.tv_sec,
     stamp.tv_nsec);
 
   if (initialized_ && !isDetFrameValid(stamp)) {
@@ -230,7 +229,7 @@ void TrackingManager::detectRecvProcess(
     cv::Mat(1, trackings_.size(), CV_32SC1, cv::Scalar(-1));
   cv::Mat weights = calcTrackDetWeights(objs, trackings_, stamp);
 
-  TRACE_INFO("stamp(%ld), Weights:%d", stamp.tv_nsec, weights);
+  TRACE_INFO("stamp(%d), Weights:%d", stamp.tv_nsec, weights);
 
   /*TBD: Need refine to get KM algorithm done to replace hungrian algorithm*/
   // cv::Mat distance = calcTrackDetMahaDistance(objs, trackings_, stamp);
@@ -241,6 +240,8 @@ void TrackingManager::detectRecvProcess(
   if (!weights.empty()) {
     matchTrackDetHungarian(weights, tracker_matches, det_matches);
   }
+  TRACE_INFO("stamp(%d), tracker_matches:%d, det_matches:%d", stamp.tv_nsec,
+    tracker_matches, det_matches);
 
   for (uint32_t i = 0; i < objs.size(); i++) {
     int32_t tracker_idx = det_matches.at<int32_t>(i);
@@ -257,12 +258,15 @@ void TrackingManager::detectRecvProcess(
   for (int32_t i = 0; i < tracker_matches.cols; i++) {
     if (tracker_matches.ptr<int>(0)[i] == -1) {
       trackings_[i]->decDetCount();
+      TRACE_INFO("stamp(%d), tracker(%d) decDetCount", stamp.tv_nsec, i);
     } else {
       trackings_[i]->incDetCount();
+      TRACE_INFO("stamp(%d), tracker(%d) incDetCount", stamp.tv_nsec, i);
     }
   }
 
-  initialized_ = true;
+  if (!initialized_)
+    initialized_ = true;
 }
 
 bool TrackingManager::isDetFrameValid(timespec stamp)
@@ -460,6 +464,7 @@ void TrackingManager::matchTrackDetHungarian(
 
   /*compare weight with threshold, get tracker/detection association*/
   cv::Mat correlations = weights >= exp(-2.0f);
+  TRACE_INFO("match correlations(%d)", correlations);
 
   /*search from tracker to detection*/
   for (int i = 0; i < row_match.cols; i++) {

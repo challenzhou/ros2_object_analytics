@@ -125,6 +125,7 @@ void Streamer_node::emitFrame()
       putText(frame_, std::to_string(id), point, cv::FONT_HERSHEY_PLAIN, 1,
         cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
       rectangle(frame_, r, cv::Scalar(255, 0, 0), 1, cv::LINE_8);
+      TRACE_INFO("track id(%d), rect(%d)", id, r);
     }
 
 #ifndef NDEBUG

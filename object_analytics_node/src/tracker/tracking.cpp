@@ -73,8 +73,8 @@ void Tracking::rectifyTracker(
   cv::Mat initialCov = cv::Mat::eye(4, 4, CV_32F);
   initialCov.at<float>(0, 0) = covar.at<float>(0, 0);
   initialCov.at<float>(1, 1) = covar.at<float>(1, 1);
-  initialCov.at<float>(2, 2) = 0;
-  initialCov.at<float>(3, 3) = 0;
+  initialCov.at<float>(2, 2) = 4*covar.at<float>(0, 0);
+  initialCov.at<float>(3, 3) = 4*covar.at<float>(1, 1);
 
   cv::Mat state = cv::Mat::zeros(4, 1, CV_32F);
   state.at<float>(0) = static_cast<float>(d_rect.x) + d_rect.width / 2.0f;
@@ -107,6 +107,8 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
 
   TRACE_INFO("Tracker(%d), predict centra(%f, %f)", tracking_id_,
     bcentra.at<float>(0), bcentra.at<float>(1));
+  TRACE_INFO("Tracker(%d), origin boundingBox(%d)", tracking_id_,
+    tracked_rect_);
 
   bool ret =
     tracker_->detectImpl(frame->frame, tracked_rect_, probability_, true);
@@ -117,6 +119,10 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
 
     cv::Mat covar = tracker_->getCovar().clone();
     kalman_.correct(bcentra, covar);
+
+    TRACE_INFO("Tracker(%d), detect boundingBox(%d)", tracking_id_,
+      tracked_rect_);
+
     TRACE_INFO("Tracker(%d), correct centra(%f, %f)", tracking_id_,
       bcentra.at<float>(0), bcentra.at<float>(1));
 
@@ -128,6 +134,7 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
     storeTraj(frame->stamp, prediction_, kalman_.measurementCovPre,
       frame->frame);
 
+    incTrackLost();
     TRACE_ERR("Tracker(%d) is missing!!!", tracking_id_);
   }
 
@@ -148,27 +155,25 @@ void Tracking::updateTracker(
     det);
 
   if (det) {
-    bool debug = false;
 
     Traj traj;
     bool ret = getTraj(traj);
     if (!ret) {
       TRACE_INFO("Tracker(%d) update fail, stamp(%f), det(%d):no base frame!!!!",
         tracking_id_, lstamp, det);
-      state_ = LOST;
       return;
     }
 
     cv::Mat frame_latest = traj.frame_;
     ret =
       tracker_->updateWithDetectImpl(frame->frame, boundingBox, frame_latest,
-        tracked_rect_, probability_, debug);
+        tracked_rect_, probability_, true);
 
     if (!ret) {
       TRACE_INFO("Tracker(%d) update fail, stamp(%f), det(%d): match fail!!!!",
         tracking_id_, lstamp, det);
 
-      state_ = LOST;
+      decDetCount();
       return;
     }
 

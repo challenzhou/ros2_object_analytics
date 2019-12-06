@@ -644,7 +644,6 @@ bool TrackerKCFImpl::updateWithDetectImpl(
 
   if (roi.size() != roi_detect.size()) {
     template_scale = true;
-    roi = roi_detect;
     createHanningWindow(hann, cv::Size(cvRound(roi.width), cvRound(roi.height)),
       CV_32F);
     cv::Mat _layer[] = {hann, hann, hann, hann, hann, hann, hann, hann, hann, hann};
@@ -719,8 +718,12 @@ bool TrackerKCFImpl::updateWithDetectImpl(
   if (maxVal > 1.0f) {maxVal = 1.0f;}
 
   if (maxVal < params.detect_thresh) {
-    TRACE_ERR("\nUpdate with detect: Failed(%f)!!!", maxVal);
+    TRACE_ERR("Update with detect: Failed(%f)!!!", maxVal);
     return false;
+  }
+
+  if (template_scale) {
+    roi = roi_detect;
   }
 
   extractCovar(res, exp(-2.0f), corrMean, corrCovar, corrEigVal, corrEigVec);
