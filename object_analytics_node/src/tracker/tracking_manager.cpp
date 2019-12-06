@@ -463,7 +463,7 @@ void TrackingManager::matchTrackDetHungarian(
   }
 
   /*compare weight with threshold, get tracker/detection association*/
-  cv::Mat correlations = weights >= exp(-2.0f);
+  cv::Mat correlations = weights >= exp(-8.0f);
   TRACE_INFO("match correlations(%d)", correlations);
 
   /*search from tracker to detection*/

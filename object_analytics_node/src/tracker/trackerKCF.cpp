@@ -68,7 +68,7 @@ Params::Params()
   sigma = 0.2f;
   lambda = 0.0000f;
   interp_factor = 0.2f;
-  output_sigma_factor = 1.0f / 8.0f;
+  output_sigma_factor = 1.0f / 16.0f;
   resize = false;
   max_patch_size = 80 * 80;
   wrap_kernel = false;
@@ -669,6 +669,9 @@ bool TrackerKCFImpl::updateWithDetectImpl(
   extractFeature(imgDet, roi_detect, x_d);
   extractFeature(imgTrack, roi_track, x_t);
   cv::Size feature_size = x_d.size();
+
+  std::vector<cv::Mat> x_tMat(x_t.channels());
+  split(x_t, x_tMat);
 
   if (x_d.empty() || x_t.empty()) {
     return false;

@@ -109,9 +109,9 @@ void KalmanFilter::configDeltaT(timespec deltaT)
   measurementMatrix.at<float>(0, 0) = 1;  // x
   measurementMatrix.at<float>(1, 1) = 1;  // y
 
-  float n1 = std::pow(dt, 4.) / 4.;
-  float n2 = std::pow(dt, 3.) / 2.;
-  float n3 = std::pow(dt, 2.);
+  float n1 = 5*std::pow(dt, 4.) / 4.;
+  float n2 = 5*std::pow(dt, 3.) / 2.;
+  float n3 = 5*std::pow(dt, 2.);
   processNoiseCov = (cv::Mat_<float>(4, 4) << n1, 0, n2, 0, 0, n1, 0, n2, n2, 0,
     n3, 0, 0, n2, 0, n3);
 }

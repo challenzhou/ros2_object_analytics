@@ -190,6 +190,11 @@ void Tracking::updateTracker(
       kalman_.correct(bcentra, covar);
 
       storeTraj(frame->stamp, prediction_, covar, frame->frame);
+    } else {
+      cv::Mat bcentra = cv::Mat::zeros(2, 1, CV_32F);
+      bcentra.at<float>(0) = tracked_rect_.x + tracked_rect_.width / 2;
+      bcentra.at<float>(1) = tracked_rect_.y + tracked_rect_.height / 2;
+      kalman_.correct(bcentra, covar);
     }
 
   } else {
