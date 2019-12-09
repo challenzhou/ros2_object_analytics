@@ -87,7 +87,7 @@ bool KalmanFilter::initialParams(
   return true;
 }
 
-void KalmanFilter::configDeltaT(timespec deltaT)
+void KalmanFilter::configDeltaT(timespec deltaT, cv::Size size)
 {
   // 10ms unit
   float dt = (deltaT.tv_sec * 1e3 + deltaT.tv_nsec * 1e-6);
@@ -108,21 +108,31 @@ void KalmanFilter::configDeltaT(timespec deltaT)
 
   measurementMatrix.at<float>(0, 0) = 1;  // x
   measurementMatrix.at<float>(1, 1) = 1;  // y
-
-  float n1 = 5*std::pow(dt, 4.) / 4.;
-  float n2 = 5*std::pow(dt, 3.) / 2.;
-  float n3 = 5*std::pow(dt, 2.);
+#if 0
+  float n1 = std::pow(dt, 4.) / 4.;
+  float n2 = std::pow(dt, 3.) / 2.;
+  float n3 = std::pow(dt, 2.);
   processNoiseCov = (cv::Mat_<float>(4, 4) << n1, 0, n2, 0, 0, n1, 0, n2, n2, 0,
     n3, 0, 0, n2, 0, n3);
+#else
+  float n1x = std::pow(dt*(size.width/2.0), 2.);
+  float n1y = std::pow(dt*(size.height/2.0), 2.);
+  float n2x = dt*std::pow(size.width/2.0, 2.);
+  float n2y = dt*std::pow(size.height/2.0, 2.);
+  float n3x = std::pow(size.width/2.0, 2.);
+  float n3y = std::pow(size.height/2.0, 2.);
+  processNoiseCov = (cv::Mat_<float>(4, 4) << n1x, 0, n2x, 0, 0, n1y, 0, n2y, n2x, 0,
+    n3x, 0, 0, n2y, 0, n3y);
+#endif
 }
 
-const cv::Mat & KalmanFilter::predict(timespec & stp, const cv::Mat & control)
+cv::Mat KalmanFilter::predict(timespec & stp, cv::Size size, const cv::Mat & control)
 {
   timespec deltaT;
   deltaT.tv_sec = stp.tv_sec - stamp.tv_sec;
   deltaT.tv_nsec = stp.tv_nsec - stamp.tv_nsec;
 
-  configDeltaT(deltaT);
+  configDeltaT(deltaT, size);
 
   // update the state: x'(k) = A*x(k)
   statePre = transitionMatrix * statePost;
@@ -150,16 +160,18 @@ const cv::Mat & KalmanFilter::predict(timespec & stp, const cv::Mat & control)
   errorCovPre.copyTo(errorCovPost);
   measurementPre = measurementMatrix * statePre;
 
-  TRACE_INFO("predict func delta T-sec:%ld, T-milisec:%ld", deltaT.tv_sec,
+  TRACE_INFO("predict func delta T-sec:%d, T-milisec:%d", deltaT.tv_sec,
     deltaT.tv_nsec * 1e-6);
   TRACE_INFO("predict func statePre:%m", statePre);
+  TRACE_INFO("predict func measurementPre:%m", measurementPre);
+  TRACE_INFO("predict func processNoiseCov:%m", processNoiseCov);
 
   stamp = stp;
 
-  return measurementPre;
+  return measurementPre.clone();
 }
 
-const cv::Mat & KalmanFilter::correct(
+cv::Mat KalmanFilter::correct(
   const std::vector<cv::Mat> & measurements,
   cv::Mat & beta, const float & miss_measure)
 {
@@ -180,7 +192,7 @@ const cv::Mat & KalmanFilter::correct(
       errorCovPost +
       beta.at<float>(i) * (temp5 * temp5.t() - statePost * statePost.t());
   }
-  return statePost;
+  return statePost.clone();
 }
 
 bool KalmanFilter::correct(const cv::Mat & measurement, cv::Mat & measureCov)
@@ -203,11 +215,16 @@ bool KalmanFilter::correct(const cv::Mat & measurement, cv::Mat & measureCov)
   statePost.setTo(cv::Scalar(0));
 
   // x(k) = x'(k) + K(k)*temp5
+  cv::Mat correction = gain * (measurement - measurementPre);
   statePost = statePre + gain * (measurement - measurementPre);
   errorCovPost = errorCovPre - gain * temp2;
 
   TRACE_INFO("correct func measurementNoiseCov:%d", measurementNoiseCov);
   TRACE_INFO("corret func gain:%d", gain);
+  TRACE_INFO("corret func measurement:%d", measurement);
+  TRACE_INFO("corret func measurementPre:%d", measurementPre);
+  TRACE_INFO("corret func correction:%d", correction);
+  TRACE_INFO("corret func statePost:%d", statePost);
 
   return true;
 }

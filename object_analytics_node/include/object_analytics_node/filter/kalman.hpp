@@ -58,20 +58,21 @@ public:
 
   @param deltaT Time interval for next predict.
    */
-  void configDeltaT(timespec deltaT);
+  void configDeltaT(timespec deltaT, cv::Size size);
 
   /** @brief Computes a predicted state.
 
-  @param time stamp for this prediction
+  @param stp Time stamp for this prediction
+  @param size Size of the object
   @param control The optional input control
    */
-  const cv::Mat & predict(timespec & stp, const cv::Mat & control = cv::Mat());
+  cv::Mat predict(timespec & stp, cv::Size size, const cv::Mat & control = cv::Mat());
 
   /** @brief Updates the predicted state from the measurement.
 
   @param measurement The measured system parameters
    */
-  const cv::Mat & correct(
+  cv::Mat correct(
     const std::vector<cv::Mat> & measurements,
     cv::Mat & beta, const float & miss_measure);
 

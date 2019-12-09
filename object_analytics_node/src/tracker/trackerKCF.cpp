@@ -390,7 +390,7 @@ bool TrackerKCFImpl::detectImpl(
     timespec stp;
     stp.tv_sec = frame / 1000;
     stp.tv_nsec = (frame % 1000) * 1e6;
-    cv::Mat bcentra = kalman.predict(stp);
+    cv::Mat bcentra = kalman.predict(stp, boundingBox.size());
     boundingBox.x = bcentra.at<float>(0) - boundingBox.width / 2;
     boundingBox.y = bcentra.at<float>(1) - boundingBox.height / 2;
   }

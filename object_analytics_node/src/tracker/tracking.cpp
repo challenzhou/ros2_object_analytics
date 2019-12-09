@@ -98,7 +98,7 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
   UNUSED(lstamp);
   TRACE_INFO("Tracker(%d) detect stamp(%f)", tracking_id_, lstamp);
 
-  cv::Mat bcentra = kalman_.predict(frame->stamp);
+  cv::Mat bcentra = kalman_.predict(frame->stamp, tracked_rect_.size());
   prediction_.x = bcentra.at<float>(0) - prediction_.width / 2;
   prediction_.y = bcentra.at<float>(1) - prediction_.height / 2;
 
@@ -182,7 +182,7 @@ void Tracking::updateTracker(
     prediction_ = tracked_rect_;
 
     if (state_ == INIT) {
-      cv::Mat bcentra = kalman_.predict(frame->stamp);
+      cv::Mat bcentra = kalman_.predict(frame->stamp, tracked_rect_.size());
       prediction_.x = bcentra.at<float>(0) - prediction_.width / 2;
       prediction_.y = bcentra.at<float>(1) - prediction_.height / 2;
       bcentra.at<float>(0) = tracked_rect_.x + tracked_rect_.width / 2;
