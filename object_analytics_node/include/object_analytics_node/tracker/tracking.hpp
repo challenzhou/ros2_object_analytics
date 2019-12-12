@@ -231,8 +231,11 @@ public:
 public:
   /*Latest track covariance.*/
   cv::Mat covar_;
-
+#ifndef NDEBUG
+public:
+#else
 private:
+#endif
   /*The maximum ageing of an active tracking.*/
   static const int32_t kAgeingThreshold;
   /*The maximum count of detection.*/

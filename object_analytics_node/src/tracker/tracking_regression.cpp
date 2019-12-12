@@ -126,6 +126,30 @@ void Streamer_node::emitFrame()
         cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
       rectangle(frame_, r, cv::Scalar(255, 0, 0), 1, cv::LINE_8);
       TRACE_INFO("track id(%d), rect(%d)", id, r);
+
+      cv::Mat covar = 64*t->tracker_->getCovar().clone();
+      cv::Mat eigVal, eigVec;
+      cv::eigen(covar, eigVal, eigVec);
+      cv::sqrt(eigVal, eigVal);
+//    cv::ellipse( img, (r.tl() + r.br())/2, Size(20,35), 0, 0, 360, white, -1, 8, 0 );
+
+      // 9.210340f from Chi-square distribution
+      //eigVal = eigVal * sqrt(9.210340f);
+      // 2.8f from Chi-square distribution for 80% possibility
+      eigVal = eigVal * sqrt(2.8f);
+      cv::Point center = (r.tl() + r.br())/2;
+      cv::Point pa_major1, pa_major2;
+      pa_major1.x = center.x + eigVal.at<float>(0) * eigVec.row(0).at<float>(0);
+      pa_major1.y = center.y + eigVal.at<float>(0) * eigVec.row(0).at<float>(1);
+      pa_major2.x = center.x - eigVal.at<float>(0) * eigVec.row(0).at<float>(0);
+      pa_major2.y = center.y - eigVal.at<float>(0) * eigVec.row(0).at<float>(1);
+      cv::Point pb_major1, pb_major2;
+      pb_major1.x = center.x + eigVal.at<float>(1) * eigVec.row(1).at<float>(0);
+      pb_major1.y = center.y + eigVal.at<float>(1) * eigVec.row(1).at<float>(1);
+      pb_major2.x = center.x - eigVal.at<float>(1) * eigVec.row(1).at<float>(0);
+      pb_major2.y = center.y - eigVal.at<float>(1) * eigVec.row(1).at<float>(1);
+      cv::line(frame_, pa_major1, pa_major2, cv::Scalar(255), 1, cv::LINE_AA);
+      cv::line(frame_, pb_major1, pb_major2, cv::Scalar(255), 1, cv::LINE_AA);
     }
 
 #ifndef NDEBUG

@@ -179,7 +179,8 @@ cv::Mat TrackingManager::calcTrackDetWeights(
       tracker->getObjName().c_str(), stamp.tv_nsec);
     TRACE_INFO("Traj Rect:%d", traj.rect_);
 
-    cv::Mat covar = traj.covar_.clone();
+    /*8*X, 8*Y,expand covariance to cover 2X object size.*/
+    cv::Mat covar = 64*traj.covar_.clone();
 
 #if 0
     float prob = sqrt(determinant(covar));
@@ -463,7 +464,7 @@ void TrackingManager::matchTrackDetHungarian(
   }
 
   /*compare weight with threshold, get tracker/detection association*/
-  cv::Mat correlations = weights >= exp(-8.0f);
+  cv::Mat correlations = weights >= exp(-0.5f);
   TRACE_INFO("match correlations(%d)", correlations);
 
   /*search from tracker to detection*/

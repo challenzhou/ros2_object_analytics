@@ -151,8 +151,8 @@ void Tracking::updateTracker(
 
   double lstamp = frame->stamp.tv_sec * 1e3 + frame->stamp.tv_nsec * 1e-6;
   UNUSED(lstamp);
-  TRACE_INFO("Tracker(%d) update stamp(%f), det(%d)", tracking_id_, lstamp,
-    det);
+  TRACE_INFO("Tracker(%d) update stamp(%f), det(%d), box(%m)", tracking_id_, lstamp,
+    det, boundingBox);
 
   if (det) {
 

@@ -64,11 +64,12 @@
  */
 Params::Params()
 {
-  detect_thresh = exp(-0.5f);
+//detect_thresh = exp(-0.5f);
+  detect_thresh = exp(-1.0f);
   sigma = 0.2f;
   lambda = 0.0000f;
   interp_factor = 0.2f;
-  output_sigma_factor = 1.0f / 16.0f;
+  output_sigma_factor = 1.0f / 8.0f;
   resize = false;
   max_patch_size = 80 * 80;
   wrap_kernel = false;
@@ -496,7 +497,7 @@ bool TrackerKCFImpl::detectImpl(
     kalman.correct(bcentra, corrCovar);
   }
 
-  TRACE_INFO("Detect end: Success!\n");
+  TRACE_INFO("Detect end: %d: Success!\n", boundingBox);
 
   return true;
 }
@@ -527,7 +528,6 @@ void TrackerKCFImpl::drawDetectProcess(
     cv::Point pb_major;
     pb_major.x = center.x + eigVal.at<float>(1) * eigVec.row(1).at<float>(0);
     pb_major.y = center.y + eigVal.at<float>(1) * eigVec.row(1).at<float>(1);
-
     cv::line(res_show, center, pa_major, cv::Scalar(255), 1, cv::LINE_AA);
     cv::line(res_show, center, pb_major, cv::Scalar(255), 1, cv::LINE_AA);
 

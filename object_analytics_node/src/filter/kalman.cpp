@@ -115,12 +115,12 @@ void KalmanFilter::configDeltaT(timespec deltaT, cv::Size size)
   processNoiseCov = (cv::Mat_<float>(4, 4) << n1, 0, n2, 0, 0, n1, 0, n2, n2, 0,
     n3, 0, 0, n2, 0, n3);
 #else
-  float n1x = std::pow(dt*(size.width/2.0), 2.);
-  float n1y = std::pow(dt*(size.height/2.0), 2.);
-  float n2x = dt*std::pow(size.width/2.0, 2.);
-  float n2y = dt*std::pow(size.height/2.0, 2.);
-  float n3x = std::pow(size.width/2.0, 2.);
-  float n3y = std::pow(size.height/2.0, 2.);
+  float n1x = std::pow(dt*(size.width), 2.);
+  float n1y = std::pow(dt*(size.height), 2.);
+  float n2x = dt*std::pow(size.width, 2.);
+  float n2y = dt*std::pow(size.height, 2.);
+  float n3x = std::pow(size.width, 2.);
+  float n3y = std::pow(size.height, 2.);
   processNoiseCov = (cv::Mat_<float>(4, 4) << n1x, 0, n2x, 0, 0, n1y, 0, n2y, n2x, 0,
     n3x, 0, 0, n2y, 0, n3y);
 #endif
