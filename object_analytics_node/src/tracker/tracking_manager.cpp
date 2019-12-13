@@ -180,7 +180,7 @@ cv::Mat TrackingManager::calcTrackDetWeights(
     TRACE_INFO("Traj Rect:%d", traj.rect_);
 
     /*8*X, 8*Y,expand covariance to cover 2X object size.*/
-    cv::Mat covar = 64*traj.covar_.clone();
+    cv::Mat covar = traj.covar_.clone();
 
 #if 0
     float prob = sqrt(determinant(covar));

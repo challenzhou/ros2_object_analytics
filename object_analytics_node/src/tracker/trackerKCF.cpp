@@ -65,7 +65,8 @@
 Params::Params()
 {
 //detect_thresh = exp(-0.5f);
-  detect_thresh = exp(-1.0f);
+//detect_thresh = exp(-1.0f);
+  detect_thresh = 0.5f;
   sigma = 0.2f;
   lambda = 0.0000f;
   interp_factor = 0.2f;
@@ -611,7 +612,7 @@ bool TrackerKCFImpl::updateWithDetectImpl(
 
   cv::Rect2d overlap = img_rect & detBox;
   if (overlap.area() <= 0) {
-    TRACE_ERR("\nUpdate: bounding box out of image area!!!");
+    TRACE_ERR("Update: bounding box out of image area!!!");
     return false;
   }
 
@@ -723,6 +724,8 @@ bool TrackerKCFImpl::updateWithDetectImpl(
   if (maxVal < params.detect_thresh) {
     TRACE_ERR("Update with detect: Failed(%f)!!!", maxVal);
     return false;
+  } else {
+    TRACE_ERR("Update with detect: Success(%f)!!!", maxVal);
   }
 
   if (template_scale) {

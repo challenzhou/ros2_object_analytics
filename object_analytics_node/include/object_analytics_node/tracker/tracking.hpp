@@ -251,6 +251,8 @@ private:
   cv::Rect2d tracked_rect_;
   /*Prediction of the tracked object.*/
   cv::Rect2d prediction_;
+  /*Prediction covariance.*/
+  cv::Mat predictCovar_;
 
   /*Name of the tracked object.*/
   std::string obj_name_;

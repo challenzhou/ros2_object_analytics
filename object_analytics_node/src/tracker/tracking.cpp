@@ -25,7 +25,7 @@ namespace tracker
 {
 const int32_t Tracking::kAgeingThreshold = 60;
 const int32_t Tracking::kDetCountThreshold = 1;
-const int32_t Tracking::kTrackLostThreshold = 3;
+const int32_t Tracking::kTrackLostThreshold = 2;
 const int32_t Tracking::kTrajLength = 30;
 
 #define DEBUG_ID 2
@@ -99,6 +99,7 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
   TRACE_INFO("Tracker(%d) detect stamp(%f)", tracking_id_, lstamp);
 
   cv::Mat bcentra = kalman_.predict(frame->stamp, tracked_rect_.size());
+  predictCovar_ = kalman_.measurementCovPre.clone();
   prediction_.x = bcentra.at<float>(0) - prediction_.width / 2;
   prediction_.y = bcentra.at<float>(1) - prediction_.height / 2;
 
@@ -126,7 +127,7 @@ bool Tracking::detectTracker(const std::shared_ptr<sFrame> frame)
     TRACE_INFO("Tracker(%d), correct centra(%f, %f)", tracking_id_,
       bcentra.at<float>(0), bcentra.at<float>(1));
 
-    storeTraj(frame->stamp, tracked_rect_, covar, frame->frame);
+    storeTraj(frame->stamp, tracked_rect_, kalman_.innoCov, frame->frame);
 
     clearTrackLost();
 
@@ -183,13 +184,14 @@ void Tracking::updateTracker(
 
     if (state_ == INIT) {
       cv::Mat bcentra = kalman_.predict(frame->stamp, tracked_rect_.size());
+      predictCovar_ = kalman_.measurementCovPre.clone();
       prediction_.x = bcentra.at<float>(0) - prediction_.width / 2;
       prediction_.y = bcentra.at<float>(1) - prediction_.height / 2;
       bcentra.at<float>(0) = tracked_rect_.x + tracked_rect_.width / 2;
       bcentra.at<float>(1) = tracked_rect_.y + tracked_rect_.height / 2;
       kalman_.correct(bcentra, covar);
 
-      storeTraj(frame->stamp, prediction_, covar, frame->frame);
+      storeTraj(frame->stamp, prediction_, kalman_.innoCov, frame->frame);
     } else {
       cv::Mat bcentra = cv::Mat::zeros(2, 1, CV_32F);
       bcentra.at<float>(0) = tracked_rect_.x + tracked_rect_.width / 2;

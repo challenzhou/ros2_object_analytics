@@ -127,7 +127,8 @@ void Streamer_node::emitFrame()
       rectangle(frame_, r, cv::Scalar(255, 0, 0), 1, cv::LINE_8);
       TRACE_INFO("track id(%d), rect(%d)", id, r);
 
-      cv::Mat covar = 64*t->tracker_->getCovar().clone();
+      //cv::Mat covar = 64*t->tracker_->getCovar().clone();
+      cv::Mat covar = t->predictCovar_;
       cv::Mat eigVal, eigVec;
       cv::eigen(covar, eigVal, eigVec);
       cv::sqrt(eigVal, eigVal);
@@ -148,8 +149,26 @@ void Streamer_node::emitFrame()
       pb_major1.y = center.y + eigVal.at<float>(1) * eigVec.row(1).at<float>(1);
       pb_major2.x = center.x - eigVal.at<float>(1) * eigVec.row(1).at<float>(0);
       pb_major2.y = center.y - eigVal.at<float>(1) * eigVec.row(1).at<float>(1);
-      cv::line(frame_, pa_major1, pa_major2, cv::Scalar(255), 1, cv::LINE_AA);
-      cv::line(frame_, pb_major1, pb_major2, cv::Scalar(255), 1, cv::LINE_AA);
+      cv::line(frame_, pa_major1, pa_major2, cv::Scalar(255), 1, cv::LINE_8);
+      cv::line(frame_, pb_major1, pb_major2, cv::Scalar(255), 1, cv::LINE_8);
+    }
+
+    for (auto t : trackings) {
+      std::vector<tracker::Traj> trajs = t->getTrajs();
+      cv::Point2d centerpre, center;
+      if (trajs.size() <= 0)
+         continue;
+
+      centerpre = (trajs[0].rect_.tl() + trajs[0].rect_.br())/2;
+
+      for (auto &traj : trajs)
+      {
+       //rectangle(image, traj.rect_, Scalar(0, 255, 0), 2, 1);
+        center = (traj.rect_.tl() + traj.rect_.br())/2;
+        cv::circle(frame_, center, 4, cv::Scalar(0, 0, 255));
+        cv::line(frame_, centerpre,center, cv::Scalar(255, 0, 0), 1, cv::LINE_AA);
+        centerpre = center;
+      }
     }
 
 #ifndef NDEBUG
@@ -211,6 +230,32 @@ void Streamer_node::emitDetect()
       putText(frame_draw, std::to_string(id), point, cv::FONT_HERSHEY_PLAIN, 1,
         cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
       rectangle(frame_draw, traj.rect_, cv::Scalar(255, 0, 0), 1, cv::LINE_8);
+
+      cv::Mat covar = traj.covar_;
+      cv::Mat eigVal, eigVec;
+      cv::eigen(covar, eigVal, eigVec);
+      cv::sqrt(eigVal, eigVal);
+//    cv::ellipse( img, (r.tl() + r.br())/2, Size(20,35), 0, 0, 360, white, -1, 8, 0 );
+
+      // 9.210340f from Chi-square distribution
+      //eigVal = eigVal * sqrt(9.210340f);
+      // 2.8f from Chi-square distribution for 80% possibility
+      eigVal = eigVal * sqrt(2.8f);
+      cv::Point center = (traj.rect_.tl() + traj.rect_.br())/2;
+      cv::Point pa_major1, pa_major2;
+      pa_major1.x = center.x + eigVal.at<float>(0) * eigVec.row(0).at<float>(0);
+      pa_major1.y = center.y + eigVal.at<float>(0) * eigVec.row(0).at<float>(1);
+      pa_major2.x = center.x - eigVal.at<float>(0) * eigVec.row(0).at<float>(0);
+      pa_major2.y = center.y - eigVal.at<float>(0) * eigVec.row(0).at<float>(1);
+      cv::Point pb_major1, pb_major2;
+      pb_major1.x = center.x + eigVal.at<float>(1) * eigVec.row(1).at<float>(0);
+      pb_major1.y = center.y + eigVal.at<float>(1) * eigVec.row(1).at<float>(1);
+      pb_major2.x = center.x - eigVal.at<float>(1) * eigVec.row(1).at<float>(0);
+      pb_major2.y = center.y - eigVal.at<float>(1) * eigVec.row(1).at<float>(1);
+      cv::line(frame_draw, pa_major1, pa_major2, cv::Scalar(255), 1, cv::LINE_8);
+      cv::line(frame_draw, pb_major1, pb_major2, cv::Scalar(255), 1, cv::LINE_8);
+
+
     }
 
     TRACE_INFO("regression detection frameId:%d", frameId);
