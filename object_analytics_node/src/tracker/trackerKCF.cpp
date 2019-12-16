@@ -452,6 +452,17 @@ bool TrackerKCFImpl::detectImpl(
   // calculate filter response
   calcResponse(alphaf, kf, response, spec);
 
+//  float kl_div = cv::compareHist(response, y, CV_COMP_KL_DIV);
+  float kl_div = 0.0f;
+  for (int i=0; i< response.rows; i++)
+    for (int j=0; j<response.cols; j++)
+    {
+      float v0 = response.at<float>(i, j);
+      float v1 = y.at<float>(i, j);
+      kl_div += v0 * fabs( v0 - v1 );
+    }
+  TRACE_INFO("track detect kl_div:%f", kl_div);
+
   ret = extractCovar(response, exp(-2.0f), corrMean, corrCovar, corrEigVal,
       corrEigVec);
   if (!ret) {
@@ -462,10 +473,16 @@ bool TrackerKCFImpl::detectImpl(
   minMaxLoc(response, &minVal, &maxVal, &minLoc, &maxLoc);
   confidence = maxVal;
   TRACE_INFO("Max response:%f, loc(%d, %d)\n", maxVal, maxLoc.x, maxLoc.y);
+  float area = cv::determinant(corrCovar);
+  float area_sqrt = sqrt(corrEigVal.at<float>(0) * corrEigVal.at<float>(1));
+  float area_base = std::pow(params.output_sigma_factor, 2.0f) * response.cols*response.rows;
+  float ratio = area_base/area_sqrt;
+  TRACE_INFO("corrCovar determinant:%f, area sqrt:%f, confidence ratio(%f)", area, area_sqrt, ratio);
 
   if (debug) {drawDetectProcess(roi_scale, x, z, k, response, alphaf);}
 
-  if (maxVal < params.detect_thresh) {
+//  if (maxVal < params.detect_thresh) {
+  if ((maxVal/ratio) < params.detect_thresh) {
     TRACE_ERR("Detect end: Fail!!!");
     return false;
   }
@@ -721,18 +738,36 @@ bool TrackerKCFImpl::updateWithDetectImpl(
 
   if (maxVal > 1.0f) {maxVal = 1.0f;}
 
-  if (maxVal < params.detect_thresh) {
+  extractCovar(res, exp(-2.0f), corrMean, corrCovar, corrEigVal, corrEigVec);
+
+//  float kl_div = cv::compareHist(res, y, CV_COMP_KL_DIV);
+  float kl_div = 0.0f;
+  for (int i=0; i< res.rows; i++)
+    for (int j=0; j<res.cols; j++)
+    {
+      float v0 = res.at<float>(i, j);
+      float v1 = y.at<float>(i, j);
+      kl_div += v0 * fabs( v0 - v1 );
+    }
+  TRACE_INFO("detect update kl_div:%f", kl_div);
+  float area = cv::determinant(corrCovar);
+  float area_sqrt = sqrt(corrEigVal.at<float>(0) * corrEigVal.at<float>(1));
+  float area_base = std::pow(params.output_sigma_factor, 2.0f) * res.cols*res.rows;
+  float ratio = area_base/area_sqrt;
+  TRACE_INFO("corrCovar determinant:%f, area sqrt:%f, confidence ratio(%f)", area, area_sqrt, ratio);
+
+//  if (maxVal < params.detect_thresh) {
+  if ((maxVal/ratio) < params.detect_thresh) {
     TRACE_ERR("Update with detect: Failed(%f)!!!", maxVal);
     return false;
   } else {
-    TRACE_ERR("Update with detect: Success(%f)!!!", maxVal);
+    TRACE_ERR("Update with detect: Success(%f), divergence(%f)!!!", maxVal, maxVal/ratio);
   }
 
   if (template_scale) {
     roi = roi_detect;
   }
 
-  extractCovar(res, exp(-2.0f), corrMean, corrCovar, corrEigVal, corrEigVec);
 
   cv::Mat z_orig = z.clone();
 
