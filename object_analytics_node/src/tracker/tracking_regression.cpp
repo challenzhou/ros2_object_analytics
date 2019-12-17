@@ -134,10 +134,11 @@ void Streamer_node::emitFrame()
       cv::sqrt(eigVal, eigVal);
 //    cv::ellipse( img, (r.tl() + r.br())/2, Size(20,35), 0, 0, 360, white, -1, 8, 0 );
 
-      // 9.210340f from Chi-square distribution
+      // 9.210340f from Chi-square distribution for 99.9% possibility
       //eigVal = eigVal * sqrt(9.210340f);
-      // 2.8f from Chi-square distribution for 80% possibility
-      eigVal = eigVal * sqrt(2.8f);
+      // 6.202186f from Chi-square distribution for 95.5% possibility
+      // 2.291408f from Chi-square distribution for 60.65% possibility
+      eigVal = eigVal * sqrt(6.202186f);
       cv::Point center = (r.tl() + r.br())/2;
       cv::Point pa_major1, pa_major2;
       pa_major1.x = center.x + eigVal.at<float>(0) * eigVec.row(0).at<float>(0);
