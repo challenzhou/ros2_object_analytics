@@ -246,8 +246,8 @@ void Streamer_node::emitDetect()
       int traj_size = det_trajs.size();
       for (int i=0; i<4; i++)
       {
-        X.at<float>(i, 0) = det_trajs[traj_size + i -5].x;
-        X.at<float>(i, 1) = det_trajs[traj_size + i -5].y;
+        X.at<float>(i, 0) = det_trajs[traj_size + i -4].x;
+        X.at<float>(i, 1) = det_trajs[traj_size + i -4].y;
 
         P.at<float>(i, 0) = std::pow(i+1, 2);
         P.at<float>(i, 1) = i+1;
@@ -267,6 +267,12 @@ void Streamer_node::emitDetect()
        predict.y = X.at<float>(i, 1);
        cv::circle(frame_draw, predict, 4, cv::Scalar(0, 0, 255));
       }
+      std::cout << "T fit parameter:" << T << std::endl;
+
+     
+      cv::Mat pred_P = (cv::Mat_<float>(1, 3) << 25, 5, 1);
+      cv::Mat pred = pred_P*T;
+      cv::circle(frame_draw, cv::Point(pred.at<float>(0), pred.at<float>(1)), 4, cv::Scalar(0, 255, 255));
     }
 
     const std::vector<std::shared_ptr<tracker::Tracking>> trackings =
