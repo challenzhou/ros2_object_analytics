@@ -184,6 +184,8 @@ void Streamer_node::emitFrame()
 
 void Streamer_node::emitDetect()
 {
+  static std::vector<cv::Point> det_trajs;
+
   int frameId = ds_->getFrameIdx();
   if ((((frameId % 3) == 0) && (frameId > 2)) || (frameId == 0)) {
     if (frameId == 0) {frameId = 1;}
@@ -216,6 +218,55 @@ void Streamer_node::emitDetect()
       rectangle(frame_draw, roi, cv::Scalar(0, 255, 0), 1, cv::LINE_8);
 
       objs_in_boxes.push_back(c_obj);
+
+      cv::Point centra = (c_obj.BoundBox_.tl() + c_obj.BoundBox_.br())/2;
+      det_trajs.push_back(centra); 
+      if (det_trajs.size() > 30)
+        det_trajs.erase(det_trajs.begin());
+    }
+
+    if (det_trajs.size() > 0)
+    {
+      cv::Point det_pre = det_trajs[0];
+
+      for (auto &det_traj : det_trajs)
+      {
+        cv::circle(frame_draw, det_traj, 2, cv::Scalar(255, 0, 0));
+        cv::line(frame_draw, det_pre, det_traj, cv::Scalar(255, 0, 0), 1, cv::LINE_AA);
+        det_pre = det_traj;
+      }
+    }
+
+    if (det_trajs.size() >= 4)
+    {
+      cv::Mat X = cv::Mat::zeros(4, 2, CV_32F);
+      cv::Mat T = cv::Mat::zeros(3, 2, CV_32F);
+      cv::Mat P = cv::Mat::zeros(4, 3, CV_32F);
+
+      int traj_size = det_trajs.size();
+      for (int i=0; i<4; i++)
+      {
+        X.at<float>(i, 0) = det_trajs[traj_size + i -5].x;
+        X.at<float>(i, 1) = det_trajs[traj_size + i -5].y;
+
+        P.at<float>(i, 0) = std::pow(i+1, 2);
+        P.at<float>(i, 1) = i+1;
+        P.at<float>(i, 2) = 1;
+      }
+
+      cv::Mat tmp = P.t()*P;
+      tmp = tmp.inv();
+      tmp = tmp*P.t();
+      T = tmp*X;
+      X = P * T;
+
+      for (int i=0; i<4; i++)
+      {
+       cv::Point predict;
+       predict.x = X.at<float>(i, 0);
+       predict.y = X.at<float>(i, 1);
+       cv::circle(frame_draw, predict, 4, cv::Scalar(0, 0, 255));
+      }
     }
 
     const std::vector<std::shared_ptr<tracker::Tracking>> trackings =
